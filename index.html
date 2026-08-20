@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>14-Day Home Workout Tracker</title>
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --bg: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --border: #E2E8F0;
+            --success: #10B981;
+            --accent: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 1.5rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Sticky Progress Container */
+        .progress-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 1rem;
+            z-index: 10;
+            margin-bottom: 2rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .progress-bar-bg {
+            background-color: #E2E8F0;
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            background-color: var(--primary);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Badge Modal Card */
+        .badge-section {
+            display: none;
+            background: #FEF3C7;
+            border: 1px solid #FCD34D;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .badge-section.active {
+            display: block;
+        }
+
+        .badge-section h2 {
+            color: #92400E;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-section p {
+            color: #78350F;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        #badgeCanvas {
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .download-btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+
+        .download-btn:hover {
+            background-color: #D97706;
+        }
+
+        /* Table Styling */
+        .table-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            min-width: 650px;
+        }
+
+        th {
+            background-color: #F1F5F9;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr.completed-row {
+            background-color: #F0FDF4;
+        }
+
+        tr.completed-row td {
+            color: #166534;
+        }
+
+        .col-done {
+            width: 60px;
+            text-align: center;
+        }
+
+        .col-day {
+            width: 130px;
+        }
+
+        .col-category {
+            width: 140px;
+        }
+
+        .col-focus {
+            width: 180px;
+        }
+
+        /* Custom Checkbox */
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--success);
+        }
+
+        .day-title {
+            font-weight: 700;
+            display: block;
+        }
+
+        .day-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #E0E7FF;
+            color: #3730A3;
+        }
+
+        .tag.rest {
+            background: #E2E8F0;
+            color: #475569;
+        }
+
+        /* Links & Routine Breakdown */
+        .routine-step {
+            margin-bottom: 0.4rem;
+        }
+
+        .routine-step strong {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            display: inline-block;
+            width: 80px;
+        }
+
+        a.yt-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a.yt-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 0.5rem;
+            }
+            .progress-card {
+                top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>14-Day Home Workout Program</h1>
+        <p class="subtitle">Target Duration: 45–50 Mins / Session | Goal: Strength & Beginner HIIT</p>
+    </header>
+
+    <div class="progress-card">
+        <div class="progress-header">
+            <span>Program Completion</span>
+            <span id="progressText">0 / 14 Days (0%)</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+    </div>
+
+    <!-- Downloadable Badge Section -->
+    <div class="badge-section" id="badgeSection">
+        <h2>🎉 Program Completed!</h2>
+        <p>Congratulations on finishing all 14 days! Claim and download your bragging badge below:</p>
+        <canvas id="badgeCanvas" width="400" height="400"></canvas><br>
+        <a id="downloadBadgeBtn" class="download-btn" download="Workout_Completion_Badge.png">Download Trophy Badge</a>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-done">Done</th>
+                    <th class="col-day">Day</th>
+                    <th class="col-category">Category</th>
+                    <th class="col-focus">Target Focus</th>
+                    <th>Full Daily Breakdown (Click to Launch Video)</th>
+                </tr>
+            </thead>
+            <tbody id="workoutTableBody">
+                <!-- Dynamically Populated by JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const workoutData = [
+        {
+            dayNum: 1,
+            date: "Wed 08/19",
+            category: "GLUTES & ABS",
+            focus: "Glute Hypertrophy & Abs",
+            completed: true,
+            breakdown: [
+                { type: "MAIN", title: "MadFit: 30-Min Abs & Booty (Weights)" }
+            ]
+        },
+        {
+            dayNum: 2,
+            date: "Thu 08/20",
+            category: "ABS & CORE",
+            focus: "Full Body & Core Toning",
+            completed: true,
+            breakdown: [
+                { type: "MAIN", title: "MadFit: 30-Min Full Body & Core Toning" }
+            ]
+        },
+        {
+            dayNum: 3,
+            date: "Fri 08/21",
+            category: "BEGINNER HIIT",
+            focus: "Low-Impact Fat Burn & Full Body",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "Juice & Toya: 30-Min Low Impact HIIT + 5-Min Core Finisher" },
+                { type: "COOL-DOWN", title: "Tom Peto: 5-Min Lower Body & Full Recovery Stretch" }
+            ]
+        },
+        {
+            dayNum: 4,
+            date: "Sat 08/22",
+            category: "ACTIVE REST",
+            focus: "Hip Opening, Lower Body Mobility & Flow",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Gentle cat-cow & spinal rotations" },
+                { type: "MAIN", title: "MadFit: 20-Min Full Body Mobility & Stretch" },
+                { type: "COOL-DOWN", title: "Deep child's pose & breathing" }
+            ]
+        },
+        {
+            dayNum: 5,
+            date: "Sun 08/23",
+            category: "FULL REST",
+            focus: "Complete Muscle Recovery & Hydration",
+            completed: false,
+            breakdown: [
+                { type: "REST", title: "Rest Protocol: Focus on hydration, light walking, and restful sleep." }
+            ]
+        },
+        {
+            dayNum: 6,
+            date: "Mon 08/24",
+            category: "GLUTES FOCUS",
+            focus: "Glute Hypertrophy & Hamstring Strength",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "fitbymik: 30-Min Lower Body & Glute Sculpt" },
+                { type: "COOL-DOWN", title: "Tom Peto: 5-Min Lower Body Cool-Down Stretch" }
+            ]
+        },
+        {
+            dayNum: 7,
+            date: "Tue 08/25",
+            category: "ABS & CORE",
+            focus: "Weighted Core & Rotational Strength",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "Juice & Toya: 30-Min Core & Abs Strength + 5-Min Plank Challenge" },
+                { type: "COOL-DOWN", title: "Cobra stretch, seal pose & child's pose" }
+            ]
+        },
+        {
+            dayNum: 8,
+            date: "Wed 08/26",
+            category: "GLUTES & ABS",
+            focus: "Posterior Chain & Lower Core Conditioning",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "Caroline Girvan: Dumbbell Glute & Core Workout" },
+                { type: "COOL-DOWN", title: "Tom Peto: 5-Min Lower Body Cool-Down Stretch" }
+            ]
+        },
+        {
+            dayNum: 9,
+            date: "Thu 08/27",
+            category: "GLUTES FOCUS",
+            focus: "Weighted Lower Body Strength & Isolation",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "Juice & Toya: Dumbbell Lower Body Routine" },
+                { type: "COOL-DOWN", title: "Tom Peto: 5-Min Lower Body Cool-Down Stretch" }
+            ]
+        },
+        {
+            dayNum: 10,
+            date: "Fri 08/28",
+            category: "BEGINNER HIIT",
+            focus: "Full Body Express HIIT & Core Burnout",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "Juice & Toya: Low-Impact HIIT & Cardio + 5-Min Core Finisher" },
+                { type: "COOL-DOWN", title: "Standing side bend, shoulder & chest opener" }
+            ]
+        },
+        {
+            dayNum: 11,
+            date: "Sat 08/29",
+            category: "ACTIVE REST",
+            focus: "Dynamic Stretch & Light Aerobic Recovery",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Gentle neck & shoulder rolls" },
+                { type: "MAIN", title: "Light Active Recovery Flow" },
+                { type: "COOL-DOWN", title: "Savasana / deep abdominal breathing" }
+            ]
+        },
+        {
+            dayNum: 12,
+            date: "Sun 08/30",
+            category: "FULL REST",
+            focus: "Complete Recovery & Decompression",
+            completed: false,
+            breakdown: [
+                { type: "REST", title: "Rest Protocol: Full rest day to prepare for final strength block." }
+            ]
+        },
+        {
+            dayNum: 13,
+            date: "Mon 08/31",
+            category: "ABS & CORE",
+            focus: "Sculpting & Anti-Extension Core Strength",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "Juice & Toya: Targeted Dumbbell Abs & Core" },
+                { type: "COOL-DOWN", title: "Cobra stretch & torso twisting stretch" }
+            ]
+        },
+        {
+            dayNum: 14,
+            date: "Tue 09/01",
+            category: "GLUTES & ABS",
+            focus: "Grand Finale: Weighted Glute & Abs Challenge",
+            completed: false,
+            breakdown: [
+                { type: "WARM-UP", title: "Juice & Toya: 5-Min Dynamic Warm-Up" },
+                { type: "MAIN", title: "Caroline Girvan: Glute & Core Challenge" },
+                { type: "COOL-DOWN", title: "Tom Peto: 5-Min Lower Body Cool-Down Stretch" }
+            ]
+        }
+    ];
+
+    // Helper: generate YouTube Search Link
+    function getYTLink(query) {
+        return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    }
+
+    // Load progress state from localStorage or initial defaults
+    function loadProgress() {
+        const saved = localStorage.getItem("workout_progress_14day");
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            workoutData.forEach((day, idx) => {
+                if (parsed[idx] !== undefined) {
+                    day.completed = parsed[idx];
+                }
+            });
+        }
+    }
+
+    // Save progress state
+    function saveProgress() {
+        const state = workoutData.map(d => d.completed);
+        localStorage.setItem("workout_progress_14day", JSON.stringify(state));
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById("workoutTableBody");
+        tbody.innerHTML = "";
+
+        workoutData.forEach((item, index) => {
+            const tr = document.createElement("tr");
+            if (item.completed) tr.classList.add("completed-row");
+
+            // Checkbox
+            const tdDone = document.createElement("td");
+            tdDone.className = "col-done";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = item.completed;
+            checkbox.addEventListener("change", () => toggleDay(index));
+            tdDone.appendChild(checkbox);
+
+            // Day info
+            const tdDay = document.createElement("td");
+            tdDay.className = "col-day";
+            tdDay.innerHTML = `<span class="day-title">Day ${item.dayNum}</span><span class="day-date">${item.date}</span>`;
+
+            // Category tag
+            const tdCat = document.createElement("td");
+            tdCat.className = "col-category";
+            const isRest = item.category.includes("REST");
+            tdCat.innerHTML = `<span class="tag ${isRest ? 'rest' : ''}">${item.category}</span>`;
+
+            // Focus
+            const tdFocus = document.createElement("td");
+            tdFocus.className = "col-focus";
+            tdFocus.textContent = item.focus;
+
+            // Breakdown Links
+            const tdBreakdown = document.createElement("td");
+            item.breakdown.forEach(step => {
+                const div = document.createElement("div");
+                div.className = "routine-step";
+                
+                // If it's rest or plain stretch, render text or search link
+                const isNamedRoutine = step.title.includes(":") || step.title.includes("MadFit") || step.title.includes("Juice") || step.title.includes("Tom Peto") || step.title.includes("fitbymik") || step.title.includes("Caroline Girvan");
+                
+                if (isNamedRoutine) {
+                    div.innerHTML = `<strong>${step.type}:</strong> <a href="${getYTLink(step.title)}" target="_blank" rel="noopener" class="yt-link">${step.title} ↗</a>`;
+                } else {
+                    div.innerHTML = `<strong>${step.type}:</strong> ${step.title}`;
+                }
+                tdBreakdown.appendChild(div);
+            });
+
+            tr.appendChild(tdDone);
+            tr.appendChild(tdDay);
+            tr.appendChild(tdCat);
+            tr.appendChild(tdFocus);
+            tr.appendChild(tdBreakdown);
+
+            tbody.appendChild(tr);
+        });
+
+        updateProgress();
+    }
+
+    function toggleDay(index) {
+        workoutData[index].completed = !workoutData[index].completed;
+        saveProgress();
+        renderTable();
+    }
+
+    function updateProgress() {
+        const completedCount = workoutData.filter(d => d.completed).length;
+        const total = workoutData.length;
+        const percentage = Math.round((completedCount / total) * 100);
+
+        document.getElementById("progressBar").style.width = `${percentage}%`;
+        document.getElementById("progressText").textContent = `${completedCount} / ${total} Days (${percentage}%)`;
+
+        const badgeSection = document.getElementById("badgeSection");
+        if (completedCount === total) {
+            badgeSection.classList.add("active");
+            generateBadgeCanvas();
+        } else {
+            badgeSection.classList.remove("active");
+        }
+    }
+
+    function generateBadgeCanvas() {
+        const canvas = document.getElementById("badgeCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // Background
+        ctx.fillStyle = "#1E293B";
+        ctx.fillRect(0, 0, 400, 400);
+
+        // Gold Border
+        ctx.strokeStyle = "#F59E0B";
+        ctx.lineWidth = 8;
+        ctx.strokeRect(15, 15, 370, 370);
+
+        // Header
+        ctx.fillStyle = "#F59E0B";
+        ctx.font = "bold 22px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("CHALLENGE COMPLETED", 200, 70);
+
+        // Trophy / Icon Symbol
+        ctx.font = "60px sans-serif";
+        ctx.fillText("🏆", 200, 150);
+
+        // Badge Title
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 26px sans-serif";
+        ctx.fillText("14-DAY HOME WORKOUT", 200, 220);
+
+        // Subtitle
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "16px sans-serif";
+        ctx.fillText("Strength & Beginner HIIT", 200, 250);
+
+        // Ribbon
+        ctx.fillStyle = "#10B981";
+        ctx.fillRect(80, 280, 240, 40);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillText("100% FINISHER", 200, 306);
+
+        // Date Stamp
+        const today = new Date().toLocaleDateString();
+        ctx.fillStyle = "#64748B";
+        ctx.font = "12px sans-serif";
+        ctx.fillText(`Completed on: ${today}`, 200, 355);
+
+        // Update Download Link
+        const btn = document.getElementById("downloadBadgeBtn");
+        btn.href = canvas.toDataURL("image/png");
+    }
+
+    // Initialize Application
+    loadProgress();
+    renderTable();
+</script>
+</body>
+</html>
